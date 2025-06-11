@@ -1,0 +1,52 @@
+//SPDX-License-Identifier: MIT
+pragma solidity >=0.8.3;
+
+contract lotter{
+    //entities - Manager, Players, Winner
+
+    address public manager;
+    address  payable[] public players;
+    address payable public winner;
+
+    constructor(){
+        manager = msg.sender;//the address which will deploy the contract will 
+        // will be the manager for the lottery system
+
+    }
+
+    function participate() public payable{
+        require(msg.value == 1 wei, "please pay 1 wei to participate");
+        players.push(payable (msg.sender));
+    }
+
+    function getBalance() public view returns(uint){
+        require(manager == msg.sender, "Not authorized");
+
+        return address(this).balance;//no of ether
+    }
+
+    //need random number to choose the winner
+
+    function random() internal view returns(uint){
+        return uint(keccak256((abi.encodePacked(block.prevrandao ,block.timestamp,players.length))));//random number based on the time stamp and difficulty;
+
+    }//generating the random number with the help of predefine functions
+
+    //working till now
+
+    function pickWinner() public{
+        require(manager == msg.sender, "You are not authorized");
+        require(players.length >= 3, "Not enough players for the lottery");
+
+        uint randomNumber = random();
+
+        uint index = randomNumber % players.length;//help to find the index of the winner
+
+        winner = players[index];
+        winner.transfer(getBalance());
+        players = new address payable[] (0);//make players array as 0 so that we can start the game again
+    }
+
+}
+
+
