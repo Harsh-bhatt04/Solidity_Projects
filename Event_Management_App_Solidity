@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.9;
+
+contract Event_app{
+    struct Event{
+        address organizer;
+        string name;
+        uint date;
+        uint price;
+        uint ticketCount;
+        uint ticketRemain;
+
+    }
+
+    mapping(uint => Event) public events;
+    mapping(address => mapping(uint => uint)) public tickets;
+    uint public nextId;
+
+
+    function createEvent(string memory name, uint date, uint price, uint ticketCount) external {
+        require(date > block.timestamp, " You can organize event for future date");
+        require(ticketCount > 0," Ticket count cannot be zero");
+
+        events[nextId] = Event(msg.sender, name, date, price, ticketCount, ticketCount);
+        nextId++;
+
+    }
+
+    function byTicket(uint id, uint quantity) external payable {
+        require(events[id].date != 0, "Event doesn't exist");
+        require(events[id].date > block.timestamp,"Event has already occured");
+
+        Event storage _event = events[id];
+        require(msg.value == (_event.price * quantity),"Ether is not sufficient");
+        require(_event.ticketRemain >= quantity, "Not enough tickets");
+
+        _event.ticketRemain -= quantity;
+        tickets[msg.sender][id] += quantity;//assigning tickets to the person who bought it.
+
+
+    }
+
+    function transferTickets(uint id, uint quantity, address to) external {
+        require(events[id].date != 0, "Event doesn't exist");
+        require(events[id].date > block.timestamp,"Event has already occured");
+
+        require(tickets[msg.sender][id] >= quantity ," You don't have enough tickets");
+
+        tickets[msg.sender][id] -= quantity;
+        tickets[to][id] += quantity;
+    }
+
+}
